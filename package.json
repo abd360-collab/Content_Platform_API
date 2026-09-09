@@ -1,0 +1,25 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "prisma:check": "prisma format && prisma validate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.5.0",
+    "prisma": "^7.10.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: content-platform-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres_2
+      POSTGRES_PASSWORD: postgres_2
+      POSTGRES_DB: content_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
