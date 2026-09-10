@@ -21,16 +21,34 @@ model User {
   updatedAt    DateTime @updatedAt
 
   follows           Follow[]
+  sessions          Session[]
   listeningProgress ListeningProgress[]
 }
 
+model Session {
+  id                String    @id @default(uuid())
+  userId            String
+  familyId          String
+  refreshTokenHash  String
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  revokedReason     String?
+  createdAt         DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+}
+
 model Show {
-  id             String   @id @default(uuid())
-  title          String
-  description    String
-  converImageUrl String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  coverImageUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   episodes Episode[]
   follows  Follow[]
