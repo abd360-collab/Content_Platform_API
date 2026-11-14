@@ -5,7 +5,7 @@ import { AppError } from "./app-error";
 
 export interface AccessTokenPayload {
     sub: string;
-    role: "Customer" | "Admin";
+    role: "CUSTOMER" | "ADMIN";
 }
 
 export interface RefreshTokenPayload {

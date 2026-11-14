@@ -85,7 +85,7 @@ export class UserService {
 
         const accessToken = generateAccessToken({
             sub: user.id,
-            role: "Customer",
+            role: "CUSTOMER",
         });
 
         return {
@@ -169,7 +169,7 @@ export class UserService {
  
         const accessToken = generateAccessToken({
             sub: session.userId,
-            role: "Customer",
+            role: "CUSTOMER",
         });
 
 
@@ -179,5 +179,15 @@ export class UserService {
         };
     }
 
+
+    async getProfile(userId: string) {
+    const user = await this.userRepository.findById(userId);
+
+    if (!user) {
+        throw new AppError(404, "User not found");
+    }
+
+    return user;
+}
 
 }

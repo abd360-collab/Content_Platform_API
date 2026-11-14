@@ -19,4 +19,17 @@ export class UserRepository {
             data,
         });
     }
+
+
+    async findById(id: string) {
+    return prisma.user.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            createdAt: true,
+        },
+    });
+}
 }
