@@ -100,4 +100,23 @@ export class SessionRepository {
             });
         });
     }
+
+
+
+async revokeAllForUser(
+    userId: string,
+    reason: string,
+) {
+    return prisma.session.updateMany({
+        where: {
+            userId,
+            revokedAt: null,
+        },
+        data: {
+            revokedAt: new Date(),
+            revokedReason: reason,
+        },
+    });
+}
+
 }

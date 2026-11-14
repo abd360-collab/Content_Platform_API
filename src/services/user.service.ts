@@ -190,4 +190,54 @@ export class UserService {
     return user;
 }
 
+
+       
+async logout(data: RefreshTokenDTO) {
+    // 1. Verify the refresh token's signature and expiry.
+    const payload = verifyRefreshToken(data.refreshToken);
+
+    // 2. Find the session associated with this token.
+    const session = await this.sessionRepository.findById(
+        payload.jti,
+    );
+
+    if (!session || session.userId !== payload.sub) {
+        throw new AppError(401, "Invalid refresh token");
+    }
+
+    // 3. Verify that this exact token belongs to the session.
+    const refreshTokenHash = hashRefreshToken(data.refreshToken);
+
+    if (refreshTokenHash !== session.refreshTokenHash) {
+        throw new AppError(401, "Invalid refresh token");
+    }
+
+    // 4. Revoke every active session in this login's token family.
+    await this.sessionRepository.revokeFamily(
+        session.familyId,
+        "LOGOUT",
+    );
+
+    return {
+        message: "Logged out successfully",
+    };
+}
+
+
+
+
+
+async logoutAll(userId: string) {
+    const result = await this.sessionRepository.revokeAllForUser(
+        userId,
+        "LOGOUT_ALL",
+    );
+
+    return {
+        message: "Logged out from all devices successfully",
+        sessionsRevoked: result.count,
+    };
+}
+
+
 }
