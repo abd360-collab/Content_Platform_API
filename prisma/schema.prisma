@@ -58,6 +58,30 @@ model Show {
 
   episodes Episode[]
   follows  Follow[]
+  categories ShowCategory[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shows ShowCategory[]
+}
+
+model ShowCategory {
+  showId     String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  show Show @relation(fields: [showId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([showId, categoryId])
+  @@index([categoryId])
 }
 
 model Episode {

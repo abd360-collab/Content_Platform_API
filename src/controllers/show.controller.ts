@@ -1,21 +1,28 @@
+
 import type { Request, Response, NextFunction } from "express";
 
 import { ShowRepository } from "../repositories/show.repository.js";
 import { ShowService } from "../services/show.service.js";
-import type { CreateShowDTO, ShowIdDTO, UpdateShowDTO } from "../validators/show.validator.js";
+
+import type {
+    CreateShowDTO,
+    ListShowsDTO,
+    ShowIdDTO,
+    UpdateShowDTO,
+} from "../validators/show.validator.js";
 
 const showRepository = new ShowRepository();
 const showService = new ShowService(showRepository);
 
 export async function createShow(
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction,
 ) {
     try {
-        const show = await showService.createShow(
-            req.body as CreateShowDTO,
-        );
+        const data = res.locals["body"] as CreateShowDTO;
+
+        const show = await showService.createShow(data);
 
         return res.status(201).json({
             success: true,
@@ -26,17 +33,15 @@ export async function createShow(
     }
 }
 
-import type { ListShowsDTO } from "../validators/show.validator.js";
-
 export async function getAllShows(
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction,
 ) {
     try {
-        const result = await showService.getAllShows(
-            res.locals["validatedQuery"] as ListShowsDTO,
-        );
+        const query = res.locals["query"] as ListShowsDTO;
+
+        const result = await showService.getAllShows(query);
 
         return res.status(200).json({
             success: true,
@@ -48,7 +53,7 @@ export async function getAllShows(
 }
 
 export async function getShowById(
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction,
 ) {
@@ -66,9 +71,8 @@ export async function getShowById(
     }
 }
 
-
 export async function updateShow(
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction,
 ) {
@@ -87,9 +91,8 @@ export async function updateShow(
     }
 }
 
-
 export async function deleteShow(
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction,
 ) {

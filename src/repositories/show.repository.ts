@@ -1,126 +1,228 @@
+
 import { prisma } from "../config/database.js";
-import { ListShowsDTO, UpdateShowDTO } from "../validators/show.validator.js";
+import { Prisma } from "../generated/prisma/client.js";
+
+import type {
+    CreateShowDTO,
+    ListShowsDTO,
+    UpdateShowDTO,
+} from "../validators/show.validator.js";
 
 export class ShowRepository {
-    async create(data: {
-        title: string;
-        description: string;
-        coverImageUrl?: string;
-    }) {
-        return prisma.show.create({
-            data: {
-                title: data.title,
-                description: data.description,
-                ...(data.coverImageUrl !== undefined && {
-                    coverImageUrl: data.coverImageUrl,
-                }),
-            },
+    async create(data: CreateShowDTO) {
+        const { categoryIds, ...showData } = data;
+
+        return prisma.$transaction(async (tx) => {
+            const show = await tx.show.create({
+                data: {
+                    ...showData,
+                },
+            });
+
+            if (categoryIds && categoryIds.length > 0) {
+                await tx.showCategory.createMany({
+                    data: categoryIds.map((categoryId) => ({
+                        showId: show.id,
+                        categoryId,
+                    })),
+                });
+            }
+
+            return tx.show.findUniqueOrThrow({
+                where: { id: show.id },
+                include: {
+                    categories: {
+                        select: {
+                            category: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    slug: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
         });
     }
 
     async findAll(query: ListShowsDTO) {
-    const { page, limit, search, sortBy } = query;
+        const { page, limit, search, sortBy, categoryId } = query;
 
-    const where = search
-        ? {
-              title: {
-                  contains: search,
-                  mode: "insensitive" as const,
-              },
-          }
-        : {};
+        const where: Prisma.ShowWhereInput = {
+            ...(search && {
+                title: {
+                    contains: search,
+                    mode: "insensitive",
+                },
+            }),
 
-    const [shows, total] = await prisma.$transaction([
-        prisma.show.findMany({
-            where,
-            skip: (page - 1) * limit,
-            take: limit,
-            orderBy: {
-                createdAt: sortBy === "newest" ? "desc" : "asc",
-            },
+            ...(categoryId && {
+                categories: {
+                    some: {
+                        categoryId,
+                    },
+                },
+            }),
+        };
+
+        const [shows, total] = await prisma.$transaction([
+            prisma.show.findMany({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: {
+                    createdAt: sortBy === "newest" ? "desc" : "asc",
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    coverImageUrl: true,
+                    createdAt: true,
+                    categories: {
+                        select: {
+                            category: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    slug: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            }),
+
+            prisma.show.count({ where }),
+        ]);
+
+        return {
+            shows,
+            total,
+        };
+    }
+
+    async findById(id: string) {
+        return prisma.show.findUnique({
+            where: { id },
             select: {
                 id: true,
                 title: true,
                 description: true,
                 coverImageUrl: true,
                 createdAt: true,
-            },
-        }),
+                updatedAt: true,
 
-        prisma.show.count({ where }),
-    ]);
-
-    return { shows, total };
-}
-
-
-
-async findById(id: string) {
-    return prisma.show.findUnique({
-        where: { id },
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            coverImageUrl: true,
-            createdAt: true,
-            updatedAt: true,
-
-            episodes: {
-                orderBy: {
-                    episodeNumber: "asc",
+                categories: {
+                    select: {
+                        category: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                            },
+                        },
+                    },
                 },
-                select: {
-                    id: true,
-                    title: true,
-                    description: true,
-                    durationInSeconds: true,
-                    episodeNumber: true,
-                    createdAt: true,
-                },
-            },
 
-            _count: {
-                select: {
-                    episodes: true,
-                    follows: true,
+                episodes: {
+                    orderBy: {
+                        episodeNumber: "asc",
+                    },
+                    select: {
+                        id: true,
+                        title: true,
+                        description: true,
+                        durationInSeconds: true,
+                        episodeNumber: true,
+                        createdAt: true,
+                    },
+                },
+
+                _count: {
+                    select: {
+                        episodes: true,
+                        follows: true,
+                    },
                 },
             },
-        },
-    });
-}
+        });
+    }
 
-async update(id: string, data: UpdateShowDTO) {
-    return prisma.show.update({
-        where: { id },
-        data,
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            coverImageUrl: true,
-            createdAt: true,
-            updatedAt: true,
-        },
-    });
-}
+    async findExistingCategoryIds(categoryIds: string[]) {
+        return prisma.category.findMany({
+            where: {
+                id: {
+                    in: categoryIds,
+                },
+            },
+            select: {
+                id: true,
+            },
+        });
+    }
 
-async delete(id: string) {
-    return prisma.show.delete({
-        where: { id },
-        select: {
-            id: true,
-            title: true,
-        },
-    });
-}
+    async update(id: string, data: UpdateShowDTO) {
+        const { categoryIds, ...showData } = data;
 
-async existsById(id: string) {
-    const show = await prisma.show.findUnique({
-        where: { id },
-        select: { id: true },
-    });
+        return prisma.$transaction(async (tx) => {
+            await tx.show.update({
+                where: { id },
+                data: showData,
+            });
 
-    return show !== null;
-}
+            if (categoryIds !== undefined) {
+                await tx.showCategory.deleteMany({
+                    where: { showId: id },
+                });
+
+                if (categoryIds.length > 0) {
+                    await tx.showCategory.createMany({
+                        data: categoryIds.map((categoryId) => ({
+                            showId: id,
+                            categoryId,
+                        })),
+                    });
+                }
+            }
+
+            return tx.show.findUniqueOrThrow({
+                where: { id },
+                include: {
+                    categories: {
+                        select: {
+                            category: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    slug: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        });
+    }
+
+    async delete(id: string) {
+        return prisma.show.delete({
+            where: { id },
+            select: {
+                id: true,
+                title: true,
+            },
+        });
+    }
+
+    async existsById(id: string) {
+        const show = await prisma.show.findUnique({
+            where: { id },
+            select: { id: true },
+        });
+
+        return show !== null;
+    }
 }
