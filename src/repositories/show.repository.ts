@@ -5,6 +5,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import type {
     CreateShowDTO,
     ListShowsDTO,
+    ListTrendingShowsDTO,
     UpdateShowDTO,
 } from "../validators/show.validator.js";
 
@@ -225,4 +226,65 @@ export class ShowRepository {
 
         return show !== null;
     }
+
+    async findTrending(query: ListTrendingShowsDTO) {
+    const { page, limit } = query;
+
+    const [shows, total] = await prisma.$transaction([
+        prisma.show.findMany({
+            skip: (page - 1) * limit,
+            take: limit,
+
+            orderBy: [
+                {
+                    follows: {
+                        _count: "desc",
+                    },
+                },
+                {
+                    createdAt: "desc",
+                },
+            ],
+
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                coverImageUrl: true,
+                createdAt: true,
+
+                categories: {
+                    select: {
+                        category: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                            },
+                        },
+                    },
+                },
+
+                _count: {
+                    select: {
+                        follows: true,
+                        episodes: true,
+                    },
+                },
+            },
+        }),
+
+        prisma.show.count(),
+    ]);
+
+    return {
+        shows: shows.map((show) => ({
+            ...show,
+            followerCount: show._count.follows,
+            episodeCount: show._count.episodes,
+            _count: undefined,
+        })),
+        total,
+    };
+}
 }

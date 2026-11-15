@@ -4,8 +4,8 @@ import { requireAuth } from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/role.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 
-import { createShow, deleteShow, getAllShows, getShowById, updateShow } from "../controllers/show.controller.js";
-import { createShowSchema, listShowsSchema, showIdSchema, updateShowSchema } from "../validators/show.validator.js";
+import { createShow, deleteShow, getAllShows, getShowById, getTrendingShows, updateShow } from "../controllers/show.controller.js";
+import { createShowSchema, listShowsSchema, listTrendingShowsSchema, showIdSchema, updateShowSchema } from "../validators/show.validator.js";
 import { createEpisodeSchema, episodeParamsSchema, listEpisodesSchema, updateEpisodeSchema } from "../validators/episode.validator.js";
 import { createEpisode, deleteEpisode, getEpisodeById, getEpisodesByShowId, updateEpisode } from "../controllers/episode.controller.js";
 import { followShow, getFollowedShows, unfollowShow } from "../controllers/follow.controller.js";
@@ -114,5 +114,15 @@ router.delete(
     validate(episodeParamsSchema, "params"),
     deleteEpisode,
 );
+
+router.get(
+    "/trending",
+    validate(listTrendingShowsSchema, "query"),
+    getTrendingShows,
+);
+
+
+
+
 
 export default router;

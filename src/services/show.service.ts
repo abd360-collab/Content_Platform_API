@@ -5,6 +5,7 @@ import { AppError } from "../utils/app-error.js";
 import type {
     CreateShowDTO,
     ListShowsDTO,
+    ListTrendingShowsDTO,
     UpdateShowDTO,
 } from "../validators/show.validator.js";
 
@@ -91,4 +92,18 @@ export class ShowService {
 
         return this.showRepository.delete(showId);
     }
+
+    async getTrendingShows(query: ListTrendingShowsDTO) {
+    const result = await this.showRepository.findTrending(query);
+
+    return {
+        ...result,
+        pagination: {
+            page: query.page,
+            limit: query.limit,
+            total: result.total,
+            totalPages: Math.ceil(result.total / query.limit),
+        },
+    };
+}
 }
