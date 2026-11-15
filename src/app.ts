@@ -1,12 +1,12 @@
 import express from "express";
-import authRoutes from "./routes/auth.routes.js"
+import authRoutes from "./modules/auth/auth.routes.js"
 import { errorHandler } from "./middleware/error.middleware.js";
 import { requestId } from "./middleware/request-id.middleware.js";
 import { requestLogger } from "./middleware/request-logger.middleware.js";
-import userRoutes from "./routes/user.routes.js";
-import showRoutes from "./routes/show.routes.js";
-import progressRoutes from "./routes/progress.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
+import userRoutes from "./modules/users/user.routes.js";
+import showRoutes from "./modules/shows/show.routes.js";
+import progressRoutes from "./modules/progress/progress.routes.js";
+import adminRoutes from "./modules/admin/admin.routes.js";
 
 
 const app = express();

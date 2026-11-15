@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../utils/app-error";
+import { AppError } from "../common/errors/app-error";
 
 
 type UserRole = NonNullable<Request["user"]>["role"];

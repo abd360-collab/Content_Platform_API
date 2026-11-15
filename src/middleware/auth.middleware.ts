@@ -1,8 +1,8 @@
 
 import type { Request, Response, NextFunction } from "express";
 
-import { verifyAccessToken } from "../utils/jwt.js";
-import { AppError } from "../utils/app-error";
+import { verifyAccessToken } from "../modules/auth/jwt.js";
+import { AppError } from "../common/errors/app-error.js";
 
 export function requireAuth(
   req: Request,

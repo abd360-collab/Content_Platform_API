@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 
 import app from "../../src/app.js";
 import { prisma } from "../../src/config/database.js";
-import { comparePassword } from "../../src/utils/password.js";
+import { comparePassword } from "../../src/modules/auth/password.js";
 
 
 

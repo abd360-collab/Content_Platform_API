@@ -1,0 +1,104 @@
+import type { Request, Response, NextFunction } from "express";
+import { FollowRepository } from "./follow.repository.js";
+import { ShowRepository } from "../shows/show.repository.js";
+import { FollowService } from "./follow.service.js";
+import type { ListRecommendationsDTO, ListShowsDTO, ShowIdDTO } from "../shows/show.validator.js";
+
+const followRepository = new FollowRepository();
+const showRepository = new ShowRepository();
+
+const followService = new FollowService(
+    followRepository,
+    showRepository,
+);
+
+export async function followShow(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const { showId } = res.locals["params"] as ShowIdDTO;
+        const userId = req.user!.id;
+
+        const result = await followService.followShow(userId, showId);
+
+        return res.status(201).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+export async function unfollowShow(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const { showId } = res.locals["params"] as ShowIdDTO;
+        const userId = req.user!.id;
+
+        const result = await followService.unfollowShow(userId, showId);
+
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+export async function getFollowedShows(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const userId = req.user!.id;
+        const { page, limit } = res.locals["query"] as ListShowsDTO;
+
+        const result = await followService.getFollowedShows(
+            userId,
+            page,
+            limit,
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+
+export async function getRecommendations(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const userId = req.user!.id;
+
+        const { page, limit } =
+            res.locals["query"] as ListRecommendationsDTO;
+
+        const result = await followService.getRecommendations(
+            userId,
+            page,
+            limit,
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}

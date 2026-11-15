@@ -1,9 +1,9 @@
 
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../utils/app-error";
+import { AppError } from "../common/errors/app-error";
 import { ZodError } from "zod";
-import { mapPrismaError } from "../utils/prisma-error.mapper";
-import { getRequestLogger } from "../utils/request-logger";
+import { mapPrismaError } from "../common/mappers/prisma-error.mapper";
+import { getRequestLogger } from "../common/logging/request-logger";
 
 function isMalformedJsonError(error: unknown): boolean {
     if (typeof error !== "object" || error === null) {

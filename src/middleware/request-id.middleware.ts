@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../config/logger";
-import { requestContext } from "../utils/request-context";
+import { requestContext } from "../common/logging/request-context";
 
 export function requestId(
     req: Request,

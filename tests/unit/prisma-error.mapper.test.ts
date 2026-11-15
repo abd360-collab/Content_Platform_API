@@ -1,8 +1,8 @@
 
 import { describe, it, expect } from "vitest";
 import { Prisma } from "../../src/generated/prisma/client";
-import { mapPrismaError } from "../../src/utils/prisma-error.mapper";
-import { AppError } from "../../src/utils/app-error";
+import { mapPrismaError } from "../../src/common/mappers/prisma-error.mapper";
+import { AppError } from "../../src/common/errors/app-error";
 
 describe("mapPrismaError", () => {
     function createPrismaError(code: string) {
