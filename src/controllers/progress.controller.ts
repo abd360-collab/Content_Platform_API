@@ -83,3 +83,45 @@ export async function getUserHistory(
         return next(error);
     }
 }
+
+export async function deleteProgress(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const { episodeId } =
+            res.locals["params"] as EpisodeProgressParamsDTO;
+
+        const result = await progressService.deleteProgress(
+            req.user!.id,
+            episodeId,
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+export async function deleteAllProgress(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const result = await progressService.deleteAllProgress(
+            req.user!.id,
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}

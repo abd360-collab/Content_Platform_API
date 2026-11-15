@@ -22,6 +22,20 @@ export const episodeParamsSchema = z.object({
     episodeId: z.string().uuid(),
 });
 
+export const updateEpisodeSchema = z.object({
+    title: z.string().trim().min(2).max(200).optional(),
+    description: z.string().trim().min(10).max(5000).optional(),
+    audioUrl: z.string().url().optional(),
+    durationInSeconds: z.number().int().positive().optional(),
+    episodeNumber: z.number().int().positive().optional(),
+}).refine(
+    (data) => Object.keys(data).length > 0,
+    {
+        message: "At least one field must be provided",
+    },
+);
+
+export type UpdateEpisodeDTO = z.infer<typeof updateEpisodeSchema>;
 export type EpisodeParamsDTO = z.infer<typeof episodeParamsSchema>;
 export type ListEpisodesDTO = z.infer<typeof listEpisodesSchema>;
 export type CreateEpisodeDTO = z.infer<typeof createEpisodeSchema>;

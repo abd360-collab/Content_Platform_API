@@ -85,4 +85,21 @@ async deleteById(id: string) {
         },
     });
 }
+
+async getAccountStats(userId: string) {
+    return prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            createdAt: true,
+            _count: {
+                select: {
+                    follows: true,
+                    listeningProgress: true,
+                },
+            },
+        },
+    });
+}
+
+
 }

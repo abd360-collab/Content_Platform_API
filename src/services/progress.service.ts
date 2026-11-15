@@ -68,4 +68,39 @@ async getUserHistory(
         limit,
     );
 }
+
+async deleteProgress(userId: string, episodeId: string) {
+    const episode = await prisma.episode.findUnique({
+        where: { id: episodeId },
+        select: { id: true },
+    });
+
+    if (!episode) {
+        throw new AppError(404, "Episode not found");
+    }
+
+    const deletedCount = await this.progressRepository.deleteProgress(
+        userId,
+        episodeId,
+    );
+
+    if (deletedCount === 0) {
+        throw new AppError(404, "Listening progress not found");
+    }
+
+    return {
+        message: "Listening progress deleted successfully",
+    };
+}
+
+async deleteAllProgress(userId: string) {
+    const deletedCount = await this.progressRepository.deleteAllProgress(
+        userId,
+    );
+
+    return {
+        deletedCount,
+        message: "Listening history cleared successfully",
+    };
+}
 }

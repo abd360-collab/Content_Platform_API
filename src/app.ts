@@ -6,6 +6,8 @@ import { requestLogger } from "./middleware/request-logger.middleware.js";
 import userRoutes from "./routes/user.routes.js";
 import showRoutes from "./routes/show.routes.js";
 import progressRoutes from "./routes/progress.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+
 
 const app = express();
 
@@ -17,6 +19,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/shows", showRoutes);
 app.use("/api/v1/episodes", progressRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 app.get("/health", (_req, res) => {
     res.status(200).json({

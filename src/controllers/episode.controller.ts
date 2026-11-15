@@ -4,7 +4,7 @@ import { EpisodeRepository } from "../repositories/episode.repository.js";
 import { ShowRepository } from "../repositories/show.repository.js";
 import { EpisodeService } from "../services/episode.service.js";
 
-import type { CreateEpisodeDTO, EpisodeParamsDTO, ListEpisodesDTO } from "../validators/episode.validator.js";
+import type { CreateEpisodeDTO, EpisodeParamsDTO, ListEpisodesDTO, UpdateEpisodeDTO } from "../validators/episode.validator.js";
 import type { ShowIdDTO } from "../validators/show.validator.js";
 
 const episodeRepository = new EpisodeRepository();
@@ -79,6 +79,60 @@ export async function getEpisodeById(
         return res.status(200).json({
             success: true,
             data: episode,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+
+export async function updateEpisode(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const { showId, episodeId } =
+            res.locals["params"] as EpisodeParamsDTO;
+
+        const data = res.locals["body"] as UpdateEpisodeDTO;
+
+        const episode = await episodeService.updateEpisode(
+            showId,
+            episodeId,
+            data,
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: episode,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+
+export async function deleteEpisode(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const { showId, episodeId } =
+            res.locals["params"] as EpisodeParamsDTO;
+
+        const result = await episodeService.deleteEpisode(
+            showId,
+            episodeId,
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                message: "Episode deleted successfully",
+                episode: result,
+            },
         });
     } catch (error) {
         return next(error);

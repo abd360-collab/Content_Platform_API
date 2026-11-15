@@ -4,13 +4,14 @@ import { validate } from "../middleware/validate.middleware.js";
 import {
     changeMyPassword,
     deleteMyAccount,
+    getAccountStats,
     getMyProfile,
     updateMyProfile,
 } from "../controllers/user.controller.js";
 import { updateProfileSchema } from "../validators/auth.validator.js";
 import { changePasswordSchema } from "../validators/user.validator.js";
 import { listProgressSchema } from "../validators/progress.validator.js";
-import { getUserHistory } from "../controllers/progress.controller.js";
+import { deleteAllProgress, getUserHistory } from "../controllers/progress.controller.js";
 
 const router = Router();
 
@@ -40,5 +41,18 @@ router.get(
     getUserHistory,
 );
 
+
+router.delete(
+    "/me/history",
+    requireAuth,
+    deleteAllProgress,
+);
+
+
+router.get(
+    "/me/stats",
+    requireAuth,
+    getAccountStats,
+);
 
 export default router;

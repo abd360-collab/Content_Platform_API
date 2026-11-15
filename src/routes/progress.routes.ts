@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getProgress, saveProgress } from "../controllers/progress.controller.js";
+import { deleteProgress, getProgress, saveProgress } from "../controllers/progress.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
@@ -22,6 +22,14 @@ router.get(
     requireAuth,
     validate(episodeProgressParamsSchema, "params"),
     getProgress,
+);
+
+
+router.delete(
+    "/:episodeId/progress",
+    requireAuth,
+    validate(episodeProgressParamsSchema, "params"),
+    deleteProgress,
 );
 
 export default router;

@@ -100,3 +100,21 @@ export async function deleteMyAccount(
         return next(error);
     }
 }
+
+
+export async function getAccountStats(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) {
+    try {
+        const result = await userService.getAccountStats(req.user!.id);
+
+        return res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}

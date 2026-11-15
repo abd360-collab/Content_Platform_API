@@ -116,4 +116,23 @@ export class ProgressRepository {
 }
 
 
+async deleteProgress(userId: string, episodeId: string) {
+    const result = await prisma.listeningProgress.deleteMany({
+        where: {
+            userId,
+            episodeId,
+        },
+    });
+
+    return result.count;
+}
+
+async deleteAllProgress(userId: string) {
+    const result = await prisma.listeningProgress.deleteMany({
+        where: { userId },
+    });
+
+    return result.count;
+}
+
 }

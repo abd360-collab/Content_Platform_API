@@ -1,5 +1,5 @@
 import { prisma } from "../config/database.js";
-import type { CreateEpisodeDTO } from "../validators/episode.validator.js";
+import type { CreateEpisodeDTO, UpdateEpisodeDTO } from "../validators/episode.validator.js";
 
 export class EpisodeRepository {
     async create(showId: string, data: CreateEpisodeDTO) {
@@ -82,6 +82,55 @@ async findById(showId: string, episodeId: string) {
             episodeNumber: true,
             createdAt: true,
             updatedAt: true,
+        },
+    });
+}
+
+async update(
+    showId: string,
+    episodeId: string,
+    data: UpdateEpisodeDTO,
+) {
+    return prisma.episode.update({
+        where: {
+            id: episodeId,
+            showId,
+        },
+        data,
+        select: {
+            id: true,
+            showId: true,
+            title: true,
+            description: true,
+            audioUrl: true,
+            durationInSeconds: true,
+            episodeNumber: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+    });
+}
+
+async hasProgress(episodeId: string) {
+    const progress = await prisma.listeningProgress.findFirst({
+        where: { episodeId },
+        select: { userId: true },
+    });
+
+    return progress !== null;
+}
+
+async delete(showId: string, episodeId: string) {
+    return prisma.episode.delete({
+        where: {
+            id: episodeId,
+            showId,
+        },
+        select: {
+            id: true,
+            showId: true,
+            title: true,
+            episodeNumber: true,
         },
     });
 }

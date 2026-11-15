@@ -6,8 +6,8 @@ import { validate } from "../middleware/validate.middleware.js";
 
 import { createShow, deleteShow, getAllShows, getShowById, updateShow } from "../controllers/show.controller.js";
 import { createShowSchema, listShowsSchema, showIdSchema, updateShowSchema } from "../validators/show.validator.js";
-import { createEpisodeSchema, episodeParamsSchema, listEpisodesSchema } from "../validators/episode.validator.js";
-import { createEpisode, getEpisodeById, getEpisodesByShowId } from "../controllers/episode.controller.js";
+import { createEpisodeSchema, episodeParamsSchema, listEpisodesSchema, updateEpisodeSchema } from "../validators/episode.validator.js";
+import { createEpisode, deleteEpisode, getEpisodeById, getEpisodesByShowId, updateEpisode } from "../controllers/episode.controller.js";
 import { followShow, getFollowedShows, unfollowShow } from "../controllers/follow.controller.js";
 
 const router = Router();
@@ -97,5 +97,22 @@ router.get(
     getFollowedShows,
 );
 
+
+router.patch(
+    "/:showId/episodes/:episodeId",
+    requireAuth,
+    requireRole("ADMIN"),
+    validate(episodeParamsSchema, "params"),
+    validate(updateEpisodeSchema, "body"),
+    updateEpisode,
+);
+
+router.delete(
+    "/:showId/episodes/:episodeId",
+    requireAuth,
+    requireRole("ADMIN"),
+    validate(episodeParamsSchema, "params"),
+    deleteEpisode,
+);
 
 export default router;

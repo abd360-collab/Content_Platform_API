@@ -325,4 +325,18 @@ async deleteAccount(userId: string) {
 }
 
 
+async getAccountStats(userId: string) {
+    const stats = await this.userRepository.getAccountStats(userId);
+
+    if (!stats) {
+        throw new AppError(404, "User not found");
+    }
+
+    return {
+        createdAt: stats.createdAt,
+        totalFollowedShows: stats._count.follows,
+        totalListeningHistory: stats._count.listeningProgress,
+    };
+}
+
 }
