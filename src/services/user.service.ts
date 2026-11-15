@@ -8,7 +8,12 @@ import { generateAccessToken,  verifyRefreshToken, generateRefreshToken } from "
 import { hashRefreshToken } from "../utils/refresh-token";
 import ms from "ms";
 import { env } from "../config/env";
-import type { RefreshTokenDTO } from "../validators/auth.validator.js";
+import type { RefreshTokenDTO, UpdateProfileDTO } from "../validators/auth.validator.js";
+import { ChangePasswordDTO } from "../validators/user.validator";
+
+
+
+const REFRESH_ROTATION_GRACE_PERIOD_MS = 5_000;
 
 export class UserService {
     // dependency injection
@@ -112,17 +117,31 @@ export class UserService {
             throw new AppError(401, "invalid refresh token");
         }
 
-        if(session.revokedAt) {
-            await this.sessionRepository.revokeFamily(
-                session.familyId,
-                "REUSE_DETECTED",
-            );
+       
+if (session.revokedAt) {
+    const recentlyRotated =
+        session.revokedReason === "ROTATED" &&
+        Date.now() - session.revokedAt.getTime() <=
+            REFRESH_ROTATION_GRACE_PERIOD_MS;
 
-            throw new AppError(
-                401,
-                "Refresh token reuse detected",
-            );
-        }
+    if (recentlyRotated) {
+        throw new AppError(
+            409,
+            "Refresh token was recently rotated. Use the latest refresh token.",
+        );
+    }
+
+    await this.sessionRepository.revokeFamily(
+        session.familyId,
+        "REUSE_DETECTED",
+    );
+
+    throw new AppError(
+        401,
+        "Refresh token reuse detected",
+    );
+}
+
 
         if(session.expiresAt <= new Date()) {
             throw new AppError(
@@ -236,6 +255,72 @@ async logoutAll(userId: string) {
     return {
         message: "Logged out from all devices successfully",
         sessionsRevoked: result.count,
+    };
+}
+
+
+async updateProfile(userId: string, data: UpdateProfileDTO) {
+    const user = await this.userRepository.updateProfile(
+        userId,
+        {
+            name: data.name,
+        },
+    );
+
+    return user;
+}
+
+
+
+
+async changePassword(userId: string, data: ChangePasswordDTO) {
+    const user = await this.userRepository.findPasswordHashById(userId);
+
+    if (!user) {
+        throw new AppError(404, "User not found");
+    }
+
+    const passwordMatches = await comparePassword(
+        data.currentPassword,
+        user.passwordHash,
+    );
+
+    if (!passwordMatches) {
+        throw new AppError(401, "Current password is incorrect");
+    }
+
+    const newPasswordHash = await hashPassword(data.newPassword);
+
+    await this.userRepository.updatePassword(
+        userId,
+        newPasswordHash,
+    );
+
+    // Revoke existing sessions so old credentials cannot continue
+    // to access the account from other devices.
+    await this.sessionRepository.revokeAllForUser(
+        userId,
+        "PASSWORD_CHANGED",
+    );
+
+    return {
+        message: "Password changed successfully. Please log in again.",
+    };
+}
+
+
+
+async deleteAccount(userId: string) {
+    const user = await this.userRepository.findById(userId);
+
+    if (!user) {
+        throw new AppError(404, "User not found");
+    }
+
+    await this.userRepository.deleteById(userId);
+
+    return {
+        message: "Account deleted successfully",
     };
 }
 

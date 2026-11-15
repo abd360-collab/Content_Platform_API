@@ -1,51 +1,84 @@
-import { Request, Response, NextFunction } from "express";
+
+import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/app-error";
 import { ZodError } from "zod";
 import { mapPrismaError } from "../utils/prisma-error.mapper";
 import { getRequestLogger } from "../utils/request-logger";
 
+function isMalformedJsonError(error: unknown): boolean {
+    if (typeof error !== "object" || error === null) {
+        return false;
+    }
+
+    const candidate = error as {
+        type?: string;
+    };
+
+    return candidate.type === "entity.parse.failed";
+}
+
 export function errorHandler(
     err: unknown,
-    _req: Request,
+    req: Request,
     res: Response,
-    _next: NextFunction,
+    next: NextFunction,
 ) {
+    // Let Express handle errors if response headers were already sent.
+    if (res.headersSent) {
+        next(err);
+        return;
+    }
 
-     const mappedPrismaError = mapPrismaError(err);
+    // Convert known Prisma errors into application errors.
+    const mappedPrismaError = mapPrismaError(err);
 
     if (mappedPrismaError) {
         err = mappedPrismaError;
     }
-    if(err instanceof AppError) {
-        res.status(err.statusCode).json({
+
+    // Malformed JSON sent by the client.
+    if (isMalformedJsonError(err)) {
+        res.status(400).json({
             success: false,
-            message: err.message,
+            message: "Invalid JSON request body",
+            requestId: req.requestId,
         });
         return;
     }
 
-    if(err instanceof ZodError) {
+    // Expected application errors.
+    if (err instanceof AppError) {
+        res.status(err.statusCode).json({
+            success: false,
+            message: err.message,
+            requestId: req.requestId,
+        });
+        return;
+    }
+
+    // Request validation errors.
+    if (err instanceof ZodError) {
         res.status(400).json({
             success: false,
             message: "Validation failed",
             errors: err.flatten().fieldErrors,
+            requestId: req.requestId,
         });
         return;
     }
 
-
-
-   getRequestLogger().error(
-    {
-        err,
-        requestId: _req.requestId,
-    },
-
-    "Unhandled application error",
-   );
+    // Unexpected errors: log details internally, not in the response.
+    getRequestLogger().error(
+        {
+            err,
+            requestId: req.requestId,
+        },
+        "Unhandled application error",
+    );
 
     res.status(500).json({
         success: false,
         message: "Internal server error",
+        requestId: req.requestId,
     });
 }
