@@ -1,16 +1,26 @@
-import { Request, Response, NextFunction } from "express";
-import { ZodSchema } from "zod";
 
-export function validate(schema: ZodSchema) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.body);
+import type { Request, Response, NextFunction } from "express";
+import type { ZodSchema } from "zod";
 
-    if (!result.success) {
-      next(result.error);
-      return;
-    }
+type RequestSource = "body" | "query" | "params";
 
-    req.body = result.data;
-    next();
-  };
+export function validate(
+    schema: ZodSchema,
+    source: RequestSource = "body",
+) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const result = schema.safeParse(req[source]);
+
+        if (!result.success) {
+            return next(result.error);
+        }
+
+        res.locals[source] = result.data;
+
+        if (source === "body") {
+            req.body = result.data;
+        }
+
+        return next();
+    };
 }

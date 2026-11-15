@@ -89,9 +89,9 @@ export class UserService {
         });
 
         const accessToken = generateAccessToken({
-            sub: user.id,
-            role: "CUSTOMER",
-        });
+    sub: user.id,
+    role: user.role,
+});
 
         return {
             accessToken,
