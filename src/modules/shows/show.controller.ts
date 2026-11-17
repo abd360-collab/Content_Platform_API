@@ -16,14 +16,17 @@ const showRepository = new ShowRepository();
 const showService = new ShowService(showRepository);
 
 export async function createShow(
-    _req: Request,
+    req: Request,
     res: Response,
     next: NextFunction,
 ) {
     try {
         const data = res.locals["body"] as CreateShowDTO;
 
-        const show = await showService.createShow(data);
+       const show = await showService.createShow(
+    req.user!.id,
+    data,
+);
 
         return res.status(201).json({
             success: true,
@@ -73,7 +76,7 @@ export async function getShowById(
 }
 
 export async function updateShow(
-    _req: Request,
+    req: Request,
     res: Response,
     next: NextFunction,
 ) {
@@ -81,7 +84,11 @@ export async function updateShow(
         const { showId } = res.locals["params"] as ShowIdDTO;
         const data = res.locals["body"] as UpdateShowDTO;
 
-        const show = await showService.updateShow(showId, data);
+        const show = await showService.updateShow(
+    req.user!.id,
+    showId,
+    data,
+);
 
         return res.status(200).json({
             success: true,

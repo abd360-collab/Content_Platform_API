@@ -23,6 +23,8 @@ beforeAll(async () => {
         );
     }
 
+    
+
     await prisma.$connect();
 });
 

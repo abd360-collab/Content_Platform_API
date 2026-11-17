@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 export const createEpisodeSchema = z.object({
@@ -5,7 +6,7 @@ export const createEpisodeSchema = z.object({
 
     description: z.string().trim().min(10).max(5000),
 
-    audioUrl: z.string().url(),
+    audioUploadId: z.string().uuid(),
 
     durationInSeconds: z.number().int().positive(),
 
@@ -24,9 +25,13 @@ export const episodeParamsSchema = z.object({
 
 export const updateEpisodeSchema = z.object({
     title: z.string().trim().min(2).max(200).optional(),
+
     description: z.string().trim().min(10).max(5000).optional(),
-    audioUrl: z.string().url().optional(),
+
+    audioUploadId: z.string().uuid().optional(),
+
     durationInSeconds: z.number().int().positive().optional(),
+
     episodeNumber: z.number().int().positive().optional(),
 }).refine(
     (data) => Object.keys(data).length > 0,

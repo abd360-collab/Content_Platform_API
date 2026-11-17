@@ -30,10 +30,10 @@ export class ShowService {
         }
     }
 
-    async createShow(data: CreateShowDTO) {
+    async createShow(adminId: string, data: CreateShowDTO) {
         await this.validateCategories(data.categoryIds);
 
-        return this.showRepository.create(data);
+        return this.showRepository.create(adminId, data);
     }
 
     async getAllShows(query: ListShowsDTO) {
@@ -50,13 +50,17 @@ export class ShowService {
 
         const result = await this.showRepository.findAll(query);
 
+        const totalPages = Math.ceil(result.total / query.limit);
+
         return {
             ...result,
             pagination: {
                 page: query.page,
                 limit: query.limit,
                 total: result.total,
-                totalPages: Math.ceil(result.total / query.limit),
+                totalPages,
+                hasNextPage: query.page < totalPages,
+                hasPreviousPage: query.page > 1,
             },
         };
     }
@@ -71,7 +75,11 @@ export class ShowService {
         return show;
     }
 
-    async updateShow(showId: string, data: UpdateShowDTO) {
+    async updateShow(
+        adminId: string,
+        showId: string,
+        data: UpdateShowDTO,
+    ) {
         const show = await this.showRepository.findById(showId);
 
         if (!show) {
@@ -80,7 +88,7 @@ export class ShowService {
 
         await this.validateCategories(data.categoryIds);
 
-        return this.showRepository.update(showId, data);
+        return this.showRepository.update(adminId, showId, data);
     }
 
     async deleteShow(showId: string) {
@@ -94,16 +102,16 @@ export class ShowService {
     }
 
     async getTrendingShows(query: ListTrendingShowsDTO) {
-    const result = await this.showRepository.findTrending(query);
+        const result = await this.showRepository.findTrending(query);
 
-    return {
-        ...result,
-        pagination: {
-            page: query.page,
-            limit: query.limit,
-            total: result.total,
-            totalPages: Math.ceil(result.total / query.limit),
-        },
-    };
-}
+        return {
+            ...result,
+            pagination: {
+                page: query.page,
+                limit: query.limit,
+                total: result.total,
+                totalPages: Math.ceil(result.total / query.limit),
+            },
+        };
+    }
 }

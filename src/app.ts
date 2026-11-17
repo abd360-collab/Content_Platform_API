@@ -7,6 +7,8 @@ import userRoutes from "./modules/users/user.routes.js";
 import showRoutes from "./modules/shows/show.routes.js";
 import progressRoutes from "./modules/progress/progress.routes.js";
 import adminRoutes from "./modules/admin/admin.routes.js";
+import categoryRoutes from "./modules/categories/category.routes.js";
+import mediaRoutes from "./modules/media/media.routes.js";
 
 
 const app = express();
@@ -18,8 +20,10 @@ app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/shows", showRoutes);
+app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/episodes", progressRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/media", mediaRoutes);
 
 app.get("/health", (_req, res) => {
     res.status(200).json({

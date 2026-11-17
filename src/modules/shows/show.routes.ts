@@ -1,14 +1,47 @@
+
 import { Router } from "express";
 
 import { requireAuth } from "../../middleware/auth.middleware.js";
 import { requireRole } from "../../middleware/role.middleware.js";
 import { validate } from "../../middleware/validate.middleware.js";
 
-import { createShow, deleteShow, getAllShows, getShowById, getTrendingShows, updateShow } from "./show.controller.js";
-import { createShowSchema, listShowsSchema, listTrendingShowsSchema, showIdSchema, updateShowSchema } from "./show.validator.js";
-import { createEpisodeSchema, episodeParamsSchema, listEpisodesSchema, updateEpisodeSchema } from "../episodes/episode.validator.js";
-import { createEpisode, deleteEpisode, getEpisodeById, getEpisodesByShowId, updateEpisode } from "../episodes/episode.controller.js";
-import { followShow, getFollowedShows, unfollowShow } from "../follows/follow.controller.js";
+import {
+    createShow,
+    deleteShow,
+    getAllShows,
+    getShowById,
+    getTrendingShows,
+    updateShow,
+} from "./show.controller.js";
+
+import {
+    createShowSchema,
+    listShowsSchema,
+    listTrendingShowsSchema,
+    showIdSchema,
+    updateShowSchema,
+} from "./show.validator.js";
+
+import {
+    createEpisodeSchema,
+    episodeParamsSchema,
+    listEpisodesSchema,
+    updateEpisodeSchema,
+} from "../episodes/episode.validator.js";
+
+import {
+    createEpisode,
+    deleteEpisode,
+    getEpisodeById,
+    getEpisodesByShowId,
+    updateEpisode,
+} from "../episodes/episode.controller.js";
+
+import {
+    followShow,
+    getFollowedShows,
+    unfollowShow,
+} from "../follows/follow.controller.js";
 
 const router = Router();
 
@@ -25,6 +58,21 @@ router.get(
     validate(listShowsSchema, "query"),
     getAllShows,
 );
+
+router.get(
+    "/trending",
+    validate(listTrendingShowsSchema, "query"),
+    getTrendingShows,
+);
+
+// Static route must precede /:showId.
+router.get(
+    "/me/following",
+    requireAuth,
+    validate(listShowsSchema, "query"),
+    getFollowedShows,
+);
+
 router.get(
     "/:showId",
     validate(showIdSchema, "params"),
@@ -57,8 +105,6 @@ router.post(
     createEpisode,
 );
 
-
-
 router.get(
     "/:showId/episodes",
     validate(showIdSchema, "params"),
@@ -72,7 +118,6 @@ router.get(
     getEpisodeById,
 );
 
-
 router.post(
     "/:showId/follow",
     requireAuth,
@@ -80,23 +125,12 @@ router.post(
     followShow,
 );
 
-
-
 router.delete(
     "/:showId/follow",
     requireAuth,
     validate(showIdSchema, "params"),
     unfollowShow,
 );
-
-
-router.get(
-    "/me/following",
-    requireAuth,
-    validate(listShowsSchema, "query"),
-    getFollowedShows,
-);
-
 
 router.patch(
     "/:showId/episodes/:episodeId",
@@ -114,15 +148,5 @@ router.delete(
     validate(episodeParamsSchema, "params"),
     deleteEpisode,
 );
-
-router.get(
-    "/trending",
-    validate(listTrendingShowsSchema, "query"),
-    getTrendingShows,
-);
-
-
-
-
 
 export default router;

@@ -1,6 +1,7 @@
 
 import { prisma } from "../../config/database.js";
 import { Prisma } from "../../generated/prisma/client.js";
+import { AppError } from "../../common/errors/app-error.js";
 
 import type {
     CreateShowDTO,
@@ -10,13 +11,72 @@ import type {
 } from "./show.validator.js";
 
 export class ShowRepository {
-    async create(data: CreateShowDTO) {
-        const { categoryIds, ...showData } = data;
+    private async attachCoverImage(
+        tx: Prisma.TransactionClient,
+        adminId: string,
+        uploadId: string,
+    ): Promise<string> {
+        const result = await tx.mediaUpload.updateMany({
+            where: {
+                id: uploadId,
+                userId: adminId,
+                mediaType: "SHOW_COVER",
+                status: "VERIFIED",
+            },
+            data: {
+                status: "ATTACHED",
+                attachedAt: new Date(),
+            },
+        });
+
+        if (result.count !== 1) {
+            throw new AppError(
+                409,
+                "Cover image upload is invalid, unavailable, or already attached",
+            );
+        }
+
+        const upload = await tx.mediaUpload.findUnique({
+            where: {
+                id: uploadId,
+            },
+            select: {
+                secureUrl: true,
+            },
+        });
+
+        if (!upload?.secureUrl) {
+            throw new AppError(
+                409,
+                "Verified cover image URL is unavailable",
+            );
+        }
+
+        return upload.secureUrl;
+    }
+
+    async create(adminId: string, data: CreateShowDTO) {
+        const {
+            categoryIds,
+            coverUploadId,
+            ...showData
+        } = data;
 
         return prisma.$transaction(async (tx) => {
+            let coverImageUrl: string | undefined;
+
+            if (coverUploadId) {
+                coverImageUrl = await this.attachCoverImage(
+                    tx,
+                    adminId,
+                    coverUploadId,
+                );
+            }
+
             const show = await tx.show.create({
                 data: {
                     ...showData,
+                    ...(coverImageUrl && { coverImageUrl }),
                 },
             });
 
@@ -53,10 +113,20 @@ export class ShowRepository {
 
         const where: Prisma.ShowWhereInput = {
             ...(search && {
-                title: {
-                    contains: search,
-                    mode: "insensitive",
-                },
+                OR: [
+                    {
+                        title: {
+                            contains: search,
+                            mode: "insensitive",
+                        },
+                    },
+                    {
+                        description: {
+                            contains: search,
+                            mode: "insensitive",
+                        },
+                    },
+                ],
             }),
 
             ...(categoryId && {
@@ -68,20 +138,38 @@ export class ShowRepository {
             }),
         };
 
+        const orderBy: Prisma.ShowOrderByWithRelationInput[] =
+            sortBy === "popular"
+                ? [
+                    {
+                        follows: {
+                            _count: "desc",
+                        },
+                    },
+                    {
+                        createdAt: "desc",
+                    },
+                ]
+                : [
+                    {
+                        createdAt: sortBy === "newest" ? "desc" : "asc",
+                    },
+                ];
+
         const [shows, total] = await prisma.$transaction([
             prisma.show.findMany({
                 where,
                 skip: (page - 1) * limit,
                 take: limit,
-                orderBy: {
-                    createdAt: sortBy === "newest" ? "desc" : "asc",
-                },
+                orderBy,
+
                 select: {
                     id: true,
                     title: true,
                     description: true,
                     coverImageUrl: true,
                     createdAt: true,
+
                     categories: {
                         select: {
                             category: {
@@ -93,6 +181,14 @@ export class ShowRepository {
                             },
                         },
                     },
+
+                    ...(sortBy === "popular" && {
+                        _count: {
+                            select: {
+                                follows: true,
+                            },
+                        },
+                    }),
                 },
             }),
 
@@ -100,7 +196,13 @@ export class ShowRepository {
         ]);
 
         return {
-            shows,
+            shows: shows.map((show) => ({
+                ...show,
+                ...(sortBy === "popular" && {
+                    followerCount: show._count.follows,
+                    _count: undefined,
+                }),
+            })),
             total,
         };
     }
@@ -165,13 +267,34 @@ export class ShowRepository {
         });
     }
 
-    async update(id: string, data: UpdateShowDTO) {
-        const { categoryIds, ...showData } = data;
+    async update(
+        adminId: string,
+        id: string,
+        data: UpdateShowDTO,
+    ) {
+        const {
+            categoryIds,
+            coverUploadId,
+            ...showData
+        } = data;
 
         return prisma.$transaction(async (tx) => {
+            let coverImageUrl: string | undefined;
+
+            if (coverUploadId) {
+                coverImageUrl = await this.attachCoverImage(
+                    tx,
+                    adminId,
+                    coverUploadId,
+                );
+            }
+
             await tx.show.update({
                 where: { id },
-                data: showData,
+                data: {
+                    ...showData,
+                    ...(coverImageUrl && { coverImageUrl }),
+                },
             });
 
             if (categoryIds !== undefined) {
@@ -228,63 +351,63 @@ export class ShowRepository {
     }
 
     async findTrending(query: ListTrendingShowsDTO) {
-    const { page, limit } = query;
+        const { page, limit } = query;
 
-    const [shows, total] = await prisma.$transaction([
-        prisma.show.findMany({
-            skip: (page - 1) * limit,
-            take: limit,
+        const [shows, total] = await prisma.$transaction([
+            prisma.show.findMany({
+                skip: (page - 1) * limit,
+                take: limit,
 
-            orderBy: [
-                {
-                    follows: {
-                        _count: "desc",
+                orderBy: [
+                    {
+                        follows: {
+                            _count: "desc",
+                        },
                     },
-                },
-                {
-                    createdAt: "desc",
-                },
-            ],
+                    {
+                        createdAt: "desc",
+                    },
+                ],
 
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                coverImageUrl: true,
-                createdAt: true,
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    coverImageUrl: true,
+                    createdAt: true,
 
-                categories: {
-                    select: {
-                        category: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true,
+                    categories: {
+                        select: {
+                            category: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    slug: true,
+                                },
                             },
                         },
                     },
-                },
 
-                _count: {
-                    select: {
-                        follows: true,
-                        episodes: true,
+                    _count: {
+                        select: {
+                            follows: true,
+                            episodes: true,
+                        },
                     },
                 },
-            },
-        }),
+            }),
 
-        prisma.show.count(),
-    ]);
+            prisma.show.count(),
+        ]);
 
-    return {
-        shows: shows.map((show) => ({
-            ...show,
-            followerCount: show._count.follows,
-            episodeCount: show._count.episodes,
-            _count: undefined,
-        })),
-        total,
-    };
-}
+        return {
+            shows: shows.map((show) => ({
+                ...show,
+                followerCount: show._count.follows,
+                episodeCount: show._count.episodes,
+                _count: undefined,
+            })),
+            total,
+        };
+    }
 }

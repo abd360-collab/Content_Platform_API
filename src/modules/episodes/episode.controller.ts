@@ -1,10 +1,16 @@
+
 import type { Request, Response, NextFunction } from "express";
 
 import { EpisodeRepository } from "./episode.repository.js";
 import { ShowRepository } from "../shows/show.repository.js";
 import { EpisodeService } from "./episode.service.js";
 
-import type { CreateEpisodeDTO, EpisodeParamsDTO, ListEpisodesDTO, UpdateEpisodeDTO } from "./episode.validator.js";
+import type {
+    CreateEpisodeDTO,
+    EpisodeParamsDTO,
+    ListEpisodesDTO,
+    UpdateEpisodeDTO,
+} from "./episode.validator.js";
 import type { ShowIdDTO } from "../shows/show.validator.js";
 
 const episodeRepository = new EpisodeRepository();
@@ -25,6 +31,7 @@ export async function createEpisode(
         const data = res.locals["body"] as CreateEpisodeDTO;
 
         const episode = await episodeService.createEpisode(
+            req.user!.id,
             showId,
             data,
         );
@@ -85,7 +92,6 @@ export async function getEpisodeById(
     }
 }
 
-
 export async function updateEpisode(
     req: Request,
     res: Response,
@@ -98,6 +104,7 @@ export async function updateEpisode(
         const data = res.locals["body"] as UpdateEpisodeDTO;
 
         const episode = await episodeService.updateEpisode(
+            req.user!.id,
             showId,
             episodeId,
             data,
@@ -111,7 +118,6 @@ export async function updateEpisode(
         return next(error);
     }
 }
-
 
 export async function deleteEpisode(
     req: Request,
