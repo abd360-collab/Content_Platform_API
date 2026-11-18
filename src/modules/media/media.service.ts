@@ -297,18 +297,39 @@ export class MediaService {
             );
         }
 
-        const verifiedUpload = await prisma.mediaUpload.update({
+       let verifiedUpload;
+
+try {
+    verifiedUpload = await prisma.mediaUpload.update({
+        where: {
+            id: mediaUpload.id,
+            status: "VERIFYING",
+        },
+        data: {
+            status: "VERIFIED",
+            secureUrl: resource.secure_url,
+            format: resource.format,
+            bytes: resource.bytes,
+            verifiedAt: new Date(),
+        },
+    });
+} catch (error) {
+    try {
+        await prisma.mediaUpload.updateMany({
             where: {
                 id: mediaUpload.id,
+                status: "VERIFYING",
             },
             data: {
-                status: "VERIFIED",
-                secureUrl: resource.secure_url,
-                format: resource.format,
-                bytes: resource.bytes,
-                verifiedAt: new Date(),
+                status: "PENDING",
             },
         });
+    } catch {
+        // Startup recovery handles records still stuck in VERIFYING.
+    }
+
+    throw error;
+}
 
         return {
             uploadId: verifiedUpload.id,
